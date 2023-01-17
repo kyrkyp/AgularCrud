@@ -1,8 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { ApiService } from '../services/api.service';
 
-import { MatDialogRef } from '@angular/material/dialog';
+import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-dialog',
@@ -12,11 +12,13 @@ import { MatDialogRef } from '@angular/material/dialog';
 export class DialogComponent implements OnInit {
   freshnessList = ['Brand New', 'Second Hand', 'Refurbished'];
   productForm!: FormGroup;
+  actionBtn: string = 'Save';
 
   constructor(
     private formBuilder: FormBuilder,
     private api: ApiService,
-    private dialogRef: MatDialogRef<DialogComponent>
+    private dialogRef: MatDialogRef<DialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public editaData: any
   ) {}
 
   ngOnInit(): void {
@@ -28,19 +30,47 @@ export class DialogComponent implements OnInit {
       comment: ['', Validators.required],
       date: ['', Validators.required],
     });
+
+    if (this.editaData) {
+      this.actionBtn = 'Update';
+      this.productForm.controls['productName'].setValue(
+        this.editaData.productName
+      );
+      this.productForm.controls['category'].setValue(this.editaData.category);
+      this.productForm.controls['freshness'].setValue(this.editaData.freshness);
+      this.productForm.controls['price'].setValue(this.editaData.price);
+      this.productForm.controls['comment'].setValue(this.editaData.comment);
+      this.productForm.controls['date'].setValue(this.editaData.date);
+    }
   }
   addProduct(): void {
-    if (this.productForm.valid) {
-      this.api.postProduct(this.productForm.value).subscribe({
-        next: (res) => {
-          alert('Product added uccessfully');
-          this.productForm.reset();
-          this.dialogRef.close('Form Saved');
-        },
-        error: () => {
-          alert('Error while adding the product');
-        },
-      });
+    if (!this.editaData) {
+      if (this.productForm.valid) {
+        this.api.postProduct(this.productForm.value).subscribe({
+          next: (res) => {
+            alert('Product added uccessfully');
+            this.productForm.reset();
+            this.dialogRef.close('save');
+          },
+          error: () => {
+            alert('Error while adding the product');
+          },
+        });
+      }
+    } else {
+      this.updateProduct();
     }
+  }
+  updateProduct() {
+    this.api.putProduct(this.productForm.value, this.editaData.id).subscribe({
+      next: (res) => {
+        alert('Product updated successfully');
+        this.productForm.reset;
+        this.dialogRef.close('update');
+      },
+      error: () => {
+        alert('Error while updating');
+      },
+    });
   }
 }

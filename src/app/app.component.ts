@@ -24,6 +24,7 @@ export class AppComponent implements OnInit {
     'freshness',
     'price',
     'comment',
+    'action',
   ];
   dataSource!: MatTableDataSource<any>;
 
@@ -37,9 +38,16 @@ export class AppComponent implements OnInit {
   }
 
   openDialog() {
-    this.dialog.open(DialogComponent, {
-      width: '30%',
-    });
+    this.dialog
+      .open(DialogComponent, {
+        width: '30%',
+      })
+      .afterClosed()
+      .subscribe((val) => {
+        if (val === 'save') {
+          this.getAllProducts();
+        }
+      });
   }
 
   getAllProducts() {
@@ -51,6 +59,32 @@ export class AppComponent implements OnInit {
       },
       error: () => {
         alert('Error while fetching the records!!');
+      },
+    });
+  }
+
+  editProduct(row: any) {
+    this.dialog
+      .open(DialogComponent, {
+        width: '30%',
+        data: row,
+      })
+      .afterClosed()
+      .subscribe((val) => {
+        if (val === 'update') {
+          this.getAllProducts();
+        }
+      });
+  }
+
+  deleteProduct(id: number) {
+    this.api.deleteProduct(id).subscribe({
+      next: (res) => {
+        alert('Product Deleted Successfully');
+        this.getAllProducts();
+      },
+      error: () => {
+        alert('Error while deleting the record');
       },
     });
   }
